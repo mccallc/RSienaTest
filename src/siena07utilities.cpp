@@ -110,7 +110,8 @@ void Rterminate()
 	}
 	catch(exception& e)
 	{
-		error(e.what());
+		error("%s", e.what());
+		//error(e.what());
 	}
 }
 

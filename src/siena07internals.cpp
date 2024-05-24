@@ -413,9 +413,11 @@ void setupOneModeObservations(const std::string& name, SEXP ONEMODES,
 	int observations = length(ONEMODES);
 	if (observations != pOneModeNetworkLongitudinalData->observationCount())
 	{
-		error(("wrong number of observations in: " + name + ": expected "
+		error("wrong number of observations in: %s: expected %d got %d",
+      name, pOneModeNetworkLongitudinalData->observationCount(), observations);
+		/* error(("wrong number of observations in: " + name + ": expected "
 				+ toString(pOneModeNetworkLongitudinalData->observationCount()) + " got "
-				+ toString(observations)).c_str());
+				+ toString(observations)).c_str()); */
 	}
 	SEXP uo;
 	PROTECT(uo = install("uponly"));
