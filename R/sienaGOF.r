@@ -105,17 +105,40 @@ sienaGOF <- function(
 			cat("Calculating auxiliary statistics for periods ", period, ".\n")
 		}
 	}
-	if (!is.null(cluster))
-	{
-		ttcSimulation <- system.time(simStatsByPeriod <-
-			lapply(period, function (j) {
-				simStatsByPeriod <- parSapply(cluster, 1:iterations,
-					function (i){auxiliaryFunction(i, sienaFitObject$f,
-						sienaFitObject$sims, j, groupName, varName, ...)})
-				simStatsByPeriod <- matrix(simStatsByPeriod, ncol=iterations)
-				dimnames(simStatsByPeriod)[[2]] <-	1:iterations
-				t(simStatsByPeriod)
+	if (!is.null(cluster)) {
+		# If running with MPI, serialise the arguments once and then send them
+		# prior to calling the funciton
+		if (Rmpi::mpi.comm.size(0) > 1) {
+			ttcSimulation <- system.time(simStatsByPeriod <-
+				lapply(period, function(j) {
+					clusterExport.mpi.fast(
+						cluster, list("sienaFitObject", "auxiliaryFunction",
+						"groupName", "varName", "j", "period"),
+					envir = environment())
+			
+					simStatsByPeriod <- 
+						clusterEvalQ.SplitIndices(cluster, function (x) {
+							sapply(x, function(i) {
+								auxiliaryFunction(i, sienaFitObject$f,
+									sienaFitObject$sims, period, groupName, varName, ...)
+							})}, iterations)
+					simStatsByPeriod <- matrix(simStatsByPeriod, ncol=iterations)
+					dimnames(simStatsByPeriod)[[2]] <-	1:iterations
+					t(simStatsByPeriod)
 				}))
+		} 
+		else 
+		{
+			ttcSimulation <- system.time(simStatsByPeriod <-
+				lapply(period, function (j) {
+					simStatsByPeriod <- parSapply(cluster, 1:iterations,
+						function (i){auxiliaryFunction(i, sienaFitObject$f,
+							sienaFitObject$sims, j, groupName, varName, ...)})
+					simStatsByPeriod <- matrix(simStatsByPeriod, ncol=iterations)
+					dimnames(simStatsByPeriod)[[2]] <-	1:iterations
+					t(simStatsByPeriod)
+					}))
+		}
 	}
 	else
 	{

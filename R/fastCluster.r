@@ -3,6 +3,18 @@ substituteX <- function(x, expr) {
     do.call("substitute", list(expr, list(x = x)))
 }
 
+clusterEvalQ.SplitIndices <- function(cl, expr, n) {
+    # Split the n tasks into batches
+    xbatches <- splitIndices(n, length(cl))
+
+    # Create sets of expressions, replacing 'x' in each expression
+    # with the correct subset of the xgrid array
+    exprs <- lapply(xbatches, substituteX, expr = substitute(expr))
+
+    # Evaluate the sets of expressions on each worker
+    docall(c, clusterApply(cl, exprs, eval))
+}
+
 clusterEvalQ.SplitByRow <- function(cl, expr, xgrid) {
     # Split the xgrid array into subsets/batches
     xbatches <- splitRows(xgrid, length(cl))
